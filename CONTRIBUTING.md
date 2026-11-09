@@ -3,7 +3,7 @@
 欢迎提问题、提修复、提建议。先说清两件事，能省掉很多来回：
 
 - 本仓库是 [ouranic.cn](https://ouranic.cn/?from=gh-contrib) 排盘引擎的**开源快照**，定期从线上同步（节奏见 README「维护节奏与贡献」）。
-- 开源版**不含**断语库、AI 解读提示词和任何 `/api/*` 后端接口（见 README「开源边界」）。AI 解读、合盘分析在开源版里返回 404 是预期行为，需要你自己实现。
+- 断语库、线上 AI 提示词、合盘接口仍不在仓库里。`/api/heming` 返回 404 是预期行为。`POST /api/interpret` 已接 DeepSeek，没配服务端 `DEEPSEEK_API_KEY` 时不会出解读；排盘本身不需要 Key。
 
 ## 提问题
 
@@ -37,4 +37,4 @@ npm test             # 排盘回归
 
 ---
 
-**English.** Issues and PRs are welcome. This repo is an open snapshot of the charting engine behind ouranic.cn; the interpretation database, AI prompts and all `/api/*` backend routes are not included, so AI features return 404 by design. For a chart you believe is wrong, please use the "Chart result question" form with full birth data and a reference result. Before opening a PR, run `npm ci`, `npm run typecheck` and `npm test`; changes to chart results need evidence and a regression test.
+**English.** Issues and PRs are welcome. This repo is an open snapshot of the charting engine behind ouranic.cn. The interpretation database, the hosted prompts, and `/api/heming` are not included (`/api/heming` returns 404 by design). `POST /api/interpret` calls DeepSeek and needs a server-side `DEEPSEEK_API_KEY`; charting does not. For a chart you believe is wrong, please use the "Chart result question" form with full birth data and a reference result. Before opening a PR, run `npm ci`, `npm run typecheck` and `npm test`; changes to chart results need evidence and a regression test.

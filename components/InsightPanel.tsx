@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ZiweiChart, Palace } from '@/lib/ziwei/types';
 import type { TimeView } from './TimeNav';
+import { readInterpretSse } from '@/lib/interpret/read-sse';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -285,34 +286,42 @@ ${selectedSiHua.starName}化${selectedSiHua.siHua}落在【${palaceName}】，�
       if (!res.ok) throw new Error('请求失败');
       if (!res.body) throw new Error('无响应流');
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
       let assistantText = '';
-
       setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split('\n')) {
-          if (!line.startsWith('data: ')) continue;
-          const data = line.slice(6);
-          if (data === '[DONE]') break;
-          try {
-            const delta = JSON.parse(data).delta?.text ?? '';
-            assistantText += delta;
-            setMessages(prev => {
-              const updated = [...prev];
-              updated[updated.length - 1] = { role: 'assistant', content: assistantText };
-              return updated;
-            });
-          } catch { /* skip */ }
-        }
+      const result = await readInterpretSse(res.body, (text) => {
+        assistantText = text;
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: 'assistant', content: assistantText };
+          return updated;
+        });
+      });
+      if (!assistantText) throw new Error('请求失败');
+      if (result.interrupted) {
+        const note = '\n\n（生成中断，以上为已收到的内容）';
+        setMessages(prev => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last?.role === 'assistant' && !last.content.endsWith('以上为已收到的内容）')) {
+            updated[updated.length - 1] = { role: 'assistant', content: last.content + note };
+          }
+          return updated;
+        });
       }
     } catch (e) {
       const missing = e instanceof Error && e.message === 'api-missing';
-      setMessages(prev => [...prev, { role: 'assistant', content: missing ? '开源版不含 AI 解读接口（/api/interpret），需要你自己实现后才能用，详见 README「快速开始」。排盘本身不需要任何 API Key。' : '解读失败，请稍后重试。' }]);
+      const content = missing
+        ? '开源版不含 AI 解读接口（/api/interpret），需要你自己实现后才能用，详见 README「快速开始」。排盘本身不需要任何 API Key。'
+        : '解读失败，请稍后重试。';
+      setMessages(prev => {
+        const updated = [...prev];
+        const last = updated[updated.length - 1];
+        if (last?.role === 'assistant' && last.content === '') {
+          updated[updated.length - 1] = { role: 'assistant', content };
+          return updated;
+        }
+        return [...updated, { role: 'assistant', content }];
+      });
     } finally {
       setLoading(false);
       loadingRef.current = false;
@@ -371,6 +380,9 @@ ${selectedSiHua.starName}化${selectedSiHua.siHua}落在【${palaceName}】，�
             );
           })}
         </div>
+        <p className="px-1 pt-1.5 text-[10px] leading-relaxed" style={{ color: 'var(--t-faint)' }}>
+          传统文化娱乐参考，不作健康、财富或命运的确定性判断。
+        </p>
       </div>
 
       {/* ── Messages ── */}

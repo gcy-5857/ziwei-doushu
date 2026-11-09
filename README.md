@@ -282,10 +282,11 @@ cd ziwei-doushu
 # 安装依赖
 npm install
 
-# 配置环境变量（只看排盘可以跳过；AI 配置仅在你自己实现了 /api/* 接口时才用得上）
+# 配置环境变量（只看排盘可以跳过）
 cp .env.example .env.local
+# 编辑 .env.local，填入服务端 DEEPSEEK_API_KEY。不要加 NEXT_PUBLIC_ 前缀，不要提交这个文件。
 
-# 启动开发服务器
+# 启动开发服务器（排盘页 http://localhost:3000/chart ）
 npm run dev
 ```
 
@@ -293,12 +294,12 @@ npm run dev
 
 ```bash
 npm run typecheck   # TypeScript 全量类型检查
-npm test            # 排盘引擎回归（768 盘 × 紫微铁律、夏令时、立春边界、红鸾天喜、样本时辰一致性、时辰序号边界、日期合法性、同宫双四化）
+npm test            # 排盘引擎回归，以及 /api/interpret 的成功、失败、缺配置与流式分片
 ```
 
 每次 push 与 PR 都会在 GitHub Actions 上跑同一套（见 [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)）。
 
-> **注意：开源版不含后端 API 路由。**排盘、命盘展示、合盘起盘都在浏览器里用本仓库的引擎完成，**不需要任何 API Key**。AI 解读（`/api/interpret`）和合盘 AI 分析（`/api/heming`）需要你自己实现接口；没实现之前，这两处会直接提示「开源版不含该接口」，配置 API Key 也不会变成可用（#30 就是这个原因）。
+> **排盘不需要 API Key。**命盘在浏览器里用本仓库的引擎生成。`POST /api/interpret` 使用 DeepSeek 官方 OpenAI 兼容接口做流式解读：必填服务端 `DEEPSEEK_API_KEY`；可选 `DEEPSEEK_BASE_URL`（默认 `https://api.deepseek.com`）和 `DEEPSEEK_MODEL`（默认 `deepseek-flash`，当前经济档；`deepseek-chat` 与 `deepseek-reasoner` 已于 2026-07-24 停用）。思考模式默认关闭。没配 Key 时解读会提示检查配置，排盘不受影响。合盘 AI（`/api/heming`）仍未实现。解读是传统文化娱乐参考，不是对健康、财富或命运的确定性判断。
 
 ---
 
@@ -387,7 +388,9 @@ npm test            # 排盘引擎回归（768 盘 × 紫微铁律、夏令时�
 | | 内容 |
 |---|---|
 | ✅ **开源** | 排盘引擎（`lib/ziwei/`）、古籍公版原文（`lib/classics/`）、SEO 知识图谱（`lib/seo/`）、Demo 界面、51.8 万样本数据集、13 维解读数据集 v4.0 |
-| ❌ **不开源** | 断语库（`lib/ziwei/db-analysis.ts` 是占位，线上是上万行的 13 主题断语）、AI 解读 prompt、后端 API（`/api/interpret` 等）、用户系统（登录 / 会员 / 支付）、服务端安全（签名、防刷、水印）、部署配置 |
+| ❌ **不开源** | 断语库（`lib/ziwei/db-analysis.ts` 是占位，线上是上万行的 13 主题断语）、线上 AI 解读 prompt、用户系统（登录 / 会员 / 支付）、服务端安全（签名、防刷、水印）、部署配置 |
+
+本仓库在上述开源快照上补了 `POST /api/interpret`（DeepSeek 流式解读，见快速开始）。合盘接口 `/api/heming`、断语库和线上 prompt 仍不在其中。
 
 如果你需要 AI 解读能力，可以参考 `lib/ziwei/patterns.ts` 和 `heming-knowledge.ts` 里的知识库，结合任意 LLM 自行构建 prompt。
 
