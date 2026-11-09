@@ -76,7 +76,7 @@ npm run typecheck    # TypeScript check
 npm test             # charting regression tests
 ```
 
-**No API key is needed for charting.** The open-source version contains **no backend routes**: AI interpretation (`/api/interpret`) and compatibility analysis (`/api/heming`) return 404 until you implement them yourself.
+**No API key is needed for charting.** `POST /api/interpret` streams a DeepSeek reading when the server has `DEEPSEEK_API_KEY` (optional `DEEPSEEK_BASE_URL`, default `https://api.deepseek.com`; optional `DEEPSEEK_MODEL`, default `deepseek-flash`). Do not prefix the key with `NEXT_PUBLIC_` and do not commit `.env.local`. Compatibility analysis (`/api/heming`) is still not implemented. Readings are cultural entertainment, not deterministic health, wealth, or fate claims.
 
 ## What is not included
 
